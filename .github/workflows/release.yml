@@ -88,5 +88,4 @@ jobs:
             "ghostterm-${version}.zip" \
             --title "GhostTerm ${version}" \
             --notes "GhostTerm ${version}." \
-            --verify-tag \
-            --prerelease
+            --verify-tag

@@ -1,11 +1,14 @@
-import builtins from "builtin-modules";
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
+import { builtinModules } from "node:module";
 import { join } from "node:path";
 import esbuild from "esbuild";
 import process from "node:process";
 
 const prod = process.argv[2] === "production";
+const builtins = [
+  ...new Set(builtinModules.flatMap((name) => name.startsWith("node:") ? [name, name.slice(5)] : [name, `node:${name}`]))
+];
 const helperModuleName = "ghostterm-embedded-helper";
 const helperPath = join(process.cwd(), "bin", "ghostterm-pty");
 
