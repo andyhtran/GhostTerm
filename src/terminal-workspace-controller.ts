@@ -230,7 +230,7 @@ export class TerminalWorkspaceController {
 			this.activeTabId = null;
 			this.focusedSurfaceId = null;
 			this.render();
-			if (this.plugin.settings.lastSurfaceCloseBehavior === "new-surface") {
+			if (this.plugin.ghostTermSettings.lastSurfaceCloseBehavior === "new-surface") {
 				void this.createInitialTab(replacementCwd);
 				return;
 			}
@@ -449,7 +449,7 @@ export class TerminalWorkspaceController {
 			window.removeEventListener("pointermove", onPointerMove, { capture: true });
 			window.removeEventListener("pointerup", stopResize, { capture: true });
 			window.removeEventListener("pointercancel", stopResize, { capture: true });
-			document.body.removeClass("ghostterm-resizing");
+			splitEl.doc.body.removeClass("ghostterm-resizing");
 			try {
 				splitEl.releasePointerCapture(pointerId);
 			} catch {
@@ -459,7 +459,7 @@ export class TerminalWorkspaceController {
 			this.focusedSurface()?.focus();
 		};
 
-		document.body.addClass("ghostterm-resizing");
+		splitEl.doc.body.addClass("ghostterm-resizing");
 		try {
 			splitEl.setPointerCapture(pointerId);
 		} catch {

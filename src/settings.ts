@@ -71,25 +71,27 @@ export class GhostTermSettingTab extends PluginSettingTab {
 				.addOption("left", "Left sidebar")
 				.addOption("tab", "Main area tab")
 				.addOption("split", "Main area split")
-				.setValue(this.plugin.settings.defaultLocation)
+				.setValue(this.plugin.ghostTermSettings.defaultLocation)
 				.onChange((value) => this.savePatch({ defaultLocation: normalizeDefaultLocation(value) })));
 
 		new Setting(containerEl).setName("Ghostty config").setHeading();
 		new Setting(containerEl)
 			.setName("Config file path")
-			.setDesc("Path to your Ghostty config file. Empty auto-detects ~/.config/ghostty/config and the macOS Application Support config.")
+			.setDesc("Path to your Ghostty config file. Empty auto-detects the standard config paths.")
 			.addText((text) => text
+				// File system paths are case-sensitive.
+				// eslint-disable-next-line obsidianmd/ui/sentence-case
 				.setPlaceholder("~/.config/ghostty/config")
-				.setValue(this.plugin.settings.ghosttyConfigPath)
+				.setValue(this.plugin.ghostTermSettings.ghosttyConfigPath)
 				.onChange((value) => this.savePatch({ ghosttyConfigPath: value.trim() })));
 
 		new Setting(containerEl).setName("Shell").setHeading();
 		new Setting(containerEl)
 			.setName("Default shell")
-			.setDesc("Path to the shell binary. Empty uses Ghostty config, then $SHELL.")
+			.setDesc("Path to the shell binary. Empty uses Ghostty config, then the environment shell.")
 			.addText((text) => text
 				.setPlaceholder("/bin/zsh")
-				.setValue(this.plugin.settings.defaultShell)
+				.setValue(this.plugin.ghostTermSettings.defaultShell)
 				.onChange((value) => this.savePatch({ defaultShell: value.trim() })));
 
 		new Setting(containerEl).setName("Font").setHeading();
@@ -98,7 +100,7 @@ export class GhostTermSettingTab extends PluginSettingTab {
 			.setDesc("Empty uses Ghostty config or the GhostTerm default stack.")
 			.addText((text) => text
 				.setPlaceholder("JetBrains Mono, Menlo, monospace")
-				.setValue(this.plugin.settings.fontFamilyOverride)
+				.setValue(this.plugin.ghostTermSettings.fontFamilyOverride)
 				.onChange((value) => this.savePatch({ fontFamilyOverride: value.trim() })));
 
 		new Setting(containerEl)
@@ -106,14 +108,14 @@ export class GhostTermSettingTab extends PluginSettingTab {
 			.setDesc("Set to 0 or empty to use Ghostty config.")
 			.addText((text) => text
 				.setPlaceholder("13")
-				.setValue(this.plugin.settings.fontSizeOverride > 0 ? String(this.plugin.settings.fontSizeOverride) : "")
+				.setValue(this.plugin.ghostTermSettings.fontSizeOverride > 0 ? String(this.plugin.ghostTermSettings.fontSizeOverride) : "")
 				.onChange((value) => this.savePatch({ fontSizeOverride: Number.parseFloat(value) || 0 })));
 
 		new Setting(containerEl)
 			.setName("Ligatures")
 			.setDesc("Controls font ligatures for newly created surfaces when supported by the renderer.")
 			.addToggle((toggle) => toggle
-				.setValue(this.plugin.settings.ligatures)
+				.setValue(this.plugin.ghostTermSettings.ligatures)
 				.onChange((value) => this.savePatch({ ligatures: value })));
 
 		new Setting(containerEl).setName("Terminal").setHeading();
@@ -122,16 +124,16 @@ export class GhostTermSettingTab extends PluginSettingTab {
 			.setDesc("Default scrollback when Ghostty config does not set scrollback-limit.")
 			.addText((text) => text
 				.setPlaceholder("100000")
-				.setValue(String(this.plugin.settings.scrollbackLines))
+				.setValue(String(this.plugin.ghostTermSettings.scrollbackLines))
 				.onChange((value) => this.savePatch({ scrollbackLines: Number.parseInt(value, 10) || DEFAULT_SETTINGS.scrollbackLines })));
 
 		new Setting(containerEl)
 			.setName("When closing the last surface")
-			.setDesc("Choose whether Cmd-W closes the Ghostty view or starts a replacement surface.")
+			.setDesc("Choose whether closing the last Ghostty surface closes the view or starts a replacement surface.")
 			.addDropdown((dropdown) => dropdown
 				.addOption("close-view", "Close Ghostty view")
 				.addOption("new-surface", "Start replacement surface")
-				.setValue(this.plugin.settings.lastSurfaceCloseBehavior)
+				.setValue(this.plugin.ghostTermSettings.lastSurfaceCloseBehavior)
 				.onChange((value) => this.savePatch({ lastSurfaceCloseBehavior: value === "new-surface" ? "new-surface" : "close-view" })));
 
 		new Setting(containerEl)
@@ -140,7 +142,7 @@ export class GhostTermSettingTab extends PluginSettingTab {
 			.addDropdown((dropdown) => dropdown
 				.addOption("manual", "Show restart control")
 				.addOption("automatic", "Restart automatically")
-				.setValue(this.plugin.settings.restartAfterExitBehavior)
+				.setValue(this.plugin.ghostTermSettings.restartAfterExitBehavior)
 				.onChange((value) => this.savePatch({ restartAfterExitBehavior: value === "automatic" ? "automatic" : "manual" })));
 	}
 
@@ -169,12 +171,16 @@ function booleanSetting(value: unknown, fallback: boolean): boolean {
 	return typeof value === "boolean" ? value : fallback;
 }
 
+function numberSettingText(value: unknown): string {
+	return typeof value === "string" ? value : "";
+}
+
 function positiveIntegerSetting(value: unknown, fallback: number): number {
-	const parsed = typeof value === "number" ? value : Number.parseInt(String(value ?? ""), 10);
+	const parsed = typeof value === "number" ? value : Number.parseInt(numberSettingText(value), 10);
 	return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : fallback;
 }
 
 function positiveNumberSetting(value: unknown, fallback: number): number {
-	const parsed = typeof value === "number" ? value : Number.parseFloat(String(value ?? ""));
+	const parsed = typeof value === "number" ? value : Number.parseFloat(numberSettingText(value));
 	return Number.isFinite(parsed) && parsed >= 0 ? parsed : fallback;
 }

@@ -26,6 +26,8 @@ import { getVaultBasePath, isUsableDirectory } from "./vault";
 export type LifecycleState = "starting" | "running" | "exited" | "restarting" | "closing" | "closed";
 type TitleSource = "cwd" | "osc";
 
+const TERMINAL_TITLE_CONTROL_PATTERN = new RegExp(`[${charRange(0x00, 0x1f)}${charEscape(0x7f)}]`, "g");
+
 export class TerminalSurface {
 	readonly id = nextId("surface");
 	readonly containerEl: HTMLElement;
@@ -218,13 +220,13 @@ export class TerminalSurface {
 	}
 
 	containsActiveElement(): boolean {
-		const active = document.activeElement;
+		const active = this.containerEl.doc.activeElement;
 		return !!active && this.containerEl.contains(active);
 	}
 
 	containsKeyboardTarget(event: KeyboardEvent): boolean {
 		const target = event.target;
-		return this.containsActiveElement() || target instanceof Node && this.containerEl.contains(target);
+		return this.containsActiveElement() || isNodeTarget(target) && this.containerEl.contains(target);
 	}
 
 	private async spawnPty(): Promise<void> {
@@ -417,7 +419,7 @@ export class TerminalSurface {
 		scrollback: number;
 		theme: GhosttyThemeColors;
 	} {
-		const settings = this.plugin.settings;
+		const settings = this.plugin.ghostTermSettings;
 		const config = this.plugin.ghosttyConfig;
 		return {
 			cursorBlink: config.cursorBlink ?? false,
@@ -431,7 +433,7 @@ export class TerminalSurface {
 	}
 
 	private effectiveShell(): string | null {
-		return this.plugin.settings.defaultShell || this.plugin.ghosttyConfig.shell || null;
+		return this.plugin.ghostTermSettings.defaultShell || this.plugin.ghosttyConfig.shell || null;
 	}
 
 	private enqueueInput(buffer: Buffer): void {
@@ -472,7 +474,7 @@ export class TerminalSurface {
 	}
 
 	private handleExitedSurface(exitText: string): void {
-		if (this.plugin.settings.restartAfterExitBehavior === "automatic") {
+		if (this.plugin.ghostTermSettings.restartAfterExitBehavior === "automatic") {
 			this.showExitOverlay(`${exitText}. Restarting...`);
 			this.restartTimer = window.setTimeout(() => {
 				this.restartTimer = null;
@@ -605,10 +607,15 @@ function defaultTitleForCwd(cwd: string): string {
 
 function cleanTerminalTitle(title: string, fallback: string): string {
 	const cleaned = title
-		.replace(/[\u0000-\u001f\u007f]/g, " ")
+		.replace(TERMINAL_TITLE_CONTROL_PATTERN, " ")
 		.replace(/\s+/g, " ")
 		.trim();
 	return cleaned || fallback;
+}
+
+function isNodeTarget(target: EventTarget | null): target is Node {
+	const maybeNode = target as Node | null;
+	return typeof maybeNode?.instanceOf === "function" && maybeNode.instanceOf(Node);
 }
 
 function cwdFromOsc7(payload: string): string | null {
@@ -662,4 +669,12 @@ function destroyStream(stream: unknown): void {
 	} catch {
 		// Best-effort cleanup.
 	}
+}
+
+function charRange(start: number, end: number): string {
+	return `${charEscape(start)}-${charEscape(end)}`;
+}
+
+function charEscape(code: number): string {
+	return `\\u${code.toString(16).padStart(4, "0")}`;
 }

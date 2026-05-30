@@ -7,13 +7,22 @@ An Obsidian desktop plugin for Ghostty-style terminal surfaces inside your works
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9%2B-blue)
 ![Rust](https://img.shields.io/badge/Rust-PTY%20helper-orange)
 
-[Getting Started](#getting-started) · [Features](#features) · [Requirements](#requirements) · [Build](#build-commands) · [Limitations](#limitations)
+[Getting Started](#getting-started) · [Features](#features) · [Requirements](#requirements) · [Security](#security-and-privacy) · [Build](#build-commands) · [Limitations](#limitations)
 
 ![GhostTerm terminal surfaces inside Obsidian](assets/ghostterm.png)
 
 ## Getting Started
 
-BRAT install:
+Install from the Obsidian Community directory:
+
+1. Open <https://community.obsidian.md/plugins/ghostterm>.
+2. Select **Add to Obsidian**.
+3. Enable GhostTerm in Obsidian's community plugin settings.
+4. Run `Open terminal` from the command palette.
+
+You can also install from inside Obsidian by opening **Settings -> Community plugins -> Browse** and searching for `GhostTerm`. If the in-app browser has not refreshed yet, use the web listing above.
+
+BRAT beta install:
 
 1. In BRAT, add `andyhtran/GhostTerm`.
 2. Select the latest release. No GitHub token is required for this repository.
@@ -23,6 +32,20 @@ BRAT install:
 On first terminal start, GhostTerm writes its bundled PTY helper into the installed plugin directory. BRAT only needs the standard Obsidian plugin files from the release.
 
 Manual install:
+
+1. Download these files from the [latest GitHub release](https://github.com/andyhtran/GhostTerm/releases/latest):
+
+   ```text
+   main.js
+   manifest.json
+   styles.css
+   ```
+
+2. Copy the files into `<vault>/.obsidian/plugins/ghostterm/`.
+
+3. Enable GhostTerm in Obsidian's community plugin settings.
+
+Build from source:
 
 1. Build GhostTerm:
 
@@ -67,6 +90,8 @@ Build:
 ## Security and Privacy
 
 GhostTerm starts a local shell through a bundled helper binary. Commands run with the same permissions as Obsidian and your user account. They can read, write, create, delete, or execute files that your user account can access.
+
+GhostTerm supports terminal copy and paste through the system clipboard when you invoke terminal copy/paste shortcuts.
 
 Use GhostTerm only in vaults and workspaces where running a local terminal is appropriate. Treat terminal output and shell commands with the same care you would in a standalone terminal application.
 
