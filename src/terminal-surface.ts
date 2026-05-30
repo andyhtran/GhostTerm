@@ -27,6 +27,8 @@ export type LifecycleState = "starting" | "running" | "exited" | "restarting" | 
 type TitleSource = "cwd" | "osc";
 
 const TERMINAL_TITLE_CONTROL_PATTERN = new RegExp(`[${charRange(0x00, 0x1f)}${charEscape(0x7f)}]`, "g");
+const MIN_RUNTIME_FONT_SIZE = 6;
+const MAX_RUNTIME_FONT_SIZE = 72;
 
 export class TerminalSurface {
 	readonly id = nextId("surface");
@@ -130,6 +132,7 @@ export class TerminalSurface {
 		this.terminal.onResize(({ cols, rows }) => this.sendResize(rows, cols));
 		this.fitAddon.fit();
 		this.fitAddon.observeResize();
+		this.applyFocusedCursorBlink();
 
 		await this.spawnPty();
 		window.requestAnimationFrame(() => this.fitAddon?.fit());
@@ -188,6 +191,47 @@ export class TerminalSurface {
 		this.enqueueInput(Buffer.from(text, "utf8"));
 	}
 
+	clearScreen(): void {
+		this.terminal?.clear();
+		this.terminal?.scrollToBottom();
+	}
+
+	selectAll(): void {
+		this.terminal?.selectAll();
+	}
+
+	scrollPageDown(): void {
+		this.terminal?.scrollPages(1);
+	}
+
+	scrollPageUp(): void {
+		this.terminal?.scrollPages(-1);
+	}
+
+	scrollToBottom(): void {
+		this.terminal?.scrollToBottom();
+	}
+
+	scrollToTop(): void {
+		this.terminal?.scrollToTop();
+	}
+
+	adjustFontSize(delta: number): void {
+		if (!this.terminal || !Number.isFinite(delta) || delta === 0) {
+			return;
+		}
+		this.terminal.options.fontSize = clampFontSize(this.terminal.options.fontSize + delta);
+		this.fit();
+	}
+
+	resetFontSize(): void {
+		if (!this.terminal) {
+			return;
+		}
+		this.terminal.options.fontSize = this.terminalOptions().fontSize;
+		this.fit();
+	}
+
 	applySettingsChanged(): void {
 		const options = this.terminalOptions();
 		this.terminalHostEl.style.fontVariantLigatures = options.ligatures ? "normal" : "none";
@@ -216,6 +260,7 @@ export class TerminalSurface {
 
 	setFocused(isFocused: boolean): void {
 		this.containerEl.dataset.focused = String(isFocused);
+		this.applyFocusedCursorBlink();
 		this.containerEl.setAttr("aria-label", this.accessibilityLabel(isFocused));
 	}
 
@@ -422,7 +467,7 @@ export class TerminalSurface {
 		const settings = this.plugin.ghostTermSettings;
 		const config = this.plugin.ghosttyConfig;
 		return {
-			cursorBlink: config.cursorBlink ?? false,
+			cursorBlink: this.isFocused(),
 			cursorStyle: config.cursorStyle ?? "block",
 			fontFamily: settings.fontFamilyOverride || config.fontFamily || "'JetBrains Mono', 'SF Mono', Menlo, Monaco, monospace",
 			fontSize: settings.fontSizeOverride > 0 ? settings.fontSizeOverride : config.fontSize ?? 13,
@@ -430,6 +475,16 @@ export class TerminalSurface {
 			scrollback: config.scrollback ?? settings.scrollbackLines,
 			theme: terminalTheme(config.colors)
 		};
+	}
+
+	private applyFocusedCursorBlink(): void {
+		if (this.terminal) {
+			this.terminal.options.cursorBlink = this.isFocused();
+		}
+	}
+
+	private isFocused(): boolean {
+		return this.containerEl.dataset.focused === "true";
 	}
 
 	private effectiveShell(): string | null {
@@ -669,6 +724,13 @@ function destroyStream(stream: unknown): void {
 	} catch {
 		// Best-effort cleanup.
 	}
+}
+
+function clampFontSize(value: number): number {
+	if (!Number.isFinite(value)) {
+		return 13;
+	}
+	return Math.min(MAX_RUNTIME_FONT_SIZE, Math.max(MIN_RUNTIME_FONT_SIZE, value));
 }
 
 function charRange(start: number, end: number): string {

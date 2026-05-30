@@ -1,4 +1,5 @@
 import type { App } from "obsidian";
+import { ClipboardPasteError, readClipboardForTerminalPaste } from "./clipboard-paste";
 import { DISPLAY_NAME, STATUS_PREFIX } from "./constants";
 import { findGhosttyKeybind, unescapeGhosttyText } from "./ghostty-config";
 import { ensureGhosttyWeb } from "./ghostty-runtime";
@@ -10,11 +11,32 @@ import {
 	firstSurfaceId,
 	removeSurfaceNode,
 	replaceSurfaceNode,
+	surfaceIdsInNode,
 	type SplitDirection,
+	type SplitFocusTarget,
 	type SplitNode,
 	type TerminalTab
 } from "./split-tree";
 import { TerminalSurface } from "./terminal-surface";
+
+type SurfaceRect = {
+	id: string;
+	rect: DOMRect;
+	order: number;
+	centerX: number;
+	centerY: number;
+};
+
+type TabFocusTarget =
+	| { type: "index"; index: number }
+	| { type: "last" }
+	| { type: "next" }
+	| { type: "previous" };
+
+type FontSizeAction =
+	| { type: "increase"; amount: number }
+	| { type: "decrease"; amount: number }
+	| { type: "reset" };
 
 export class TerminalWorkspaceController {
 	private tabs: TerminalTab[] = [];
@@ -81,6 +103,24 @@ export class TerminalWorkspaceController {
 		void this.createSplitFromFocusedSurface(direction);
 	}
 
+	focusSplit(target: SplitFocusTarget): void {
+		const targetSurfaceId = this.findSplitFocusTarget(target);
+		if (targetSurfaceId) {
+			this.focusSurface(targetSurfaceId);
+		}
+	}
+
+	focusTab(target: TabFocusTarget): void {
+		const tab = this.findTabFocusTarget(target);
+		if (!tab) {
+			return;
+		}
+		this.activeTabId = tab.id;
+		this.focusedSurfaceId = firstSurfaceId(tab.root);
+		this.render();
+		this.focusedSurface()?.focus();
+	}
+
 	closeFocusedSurface(): void {
 		const tab = this.activeTab();
 		const focused = this.focusedSurface();
@@ -100,6 +140,14 @@ export class TerminalWorkspaceController {
 		this.focusedSurfaceId = firstSurfaceId(tab.root);
 		this.render();
 		this.focusedSurface()?.focus();
+	}
+
+	closeActiveTab(): void {
+		const tab = this.activeTab();
+		if (!tab) {
+			return;
+		}
+		this.closeTab(tab.id, this.focusedSurface()?.cwd);
 	}
 
 	restartFocusedSurface(): void {
@@ -138,31 +186,42 @@ export class TerminalWorkspaceController {
 		}
 
 		const action = keybind.action;
-		if (action === "copy_to_clipboard") {
+		const copyMode = copyToClipboardModeFromAction(action);
+		if (copyMode) {
 			event.preventDefault();
 			event.stopImmediatePropagation();
 			const selection = focused.getSelection();
 			if (selection && navigator.clipboard) {
 				void navigator.clipboard.writeText(selection).catch(() => undefined);
+			} else if (copyMode === "mixed") {
+				focused.writeInput("\x03");
 			}
 			return true;
 		}
-		if (action === "paste_from_clipboard") {
+		if (action.startsWith("paste_from_clipboard")) {
 			event.preventDefault();
 			event.stopImmediatePropagation();
-			if (navigator.clipboard) {
-				void navigator.clipboard.readText().then((text) => {
-					if (text) {
-						focused.paste(text);
-					}
-				}).catch(() => undefined);
-			}
+			void readClipboardForTerminalPaste().then((text) => {
+				if (text) {
+					focused.paste(text);
+				}
+			}).catch((error: unknown) => {
+				if (error instanceof ClipboardPasteError) {
+					this.setStatus(`${STATUS_PREFIX}: paste failed; ${error.message}`);
+				}
+			});
 			return true;
 		}
 		if (action.startsWith("text:")) {
 			event.preventDefault();
 			event.stopImmediatePropagation();
 			focused.writeInput(unescapeGhosttyText(action.slice(5)));
+			return true;
+		}
+		if (action.startsWith("esc:")) {
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			focused.writeInput(`\x1b${unescapeGhosttyText(action.slice(4))}`);
 			return true;
 		}
 		if (action === "new_split:down") {
@@ -177,10 +236,73 @@ export class TerminalWorkspaceController {
 			this.splitFocused("row");
 			return true;
 		}
+		const splitTarget = splitFocusTargetFromAction(action);
+		if (splitTarget) {
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			this.focusSplit(splitTarget);
+			return true;
+		}
 		if (action === "new_tab") {
 			event.preventDefault();
 			event.stopImmediatePropagation();
 			this.newTab();
+			return true;
+		}
+		if (action === "close_tab:this" || action === "close_tab") {
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			this.closeActiveTab();
+			return true;
+		}
+		const tabTarget = tabFocusTargetFromAction(action);
+		if (tabTarget) {
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			this.focusTab(tabTarget);
+			return true;
+		}
+		if (action === "clear_screen") {
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			focused.clearScreen();
+			return true;
+		}
+		if (action === "select_all") {
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			focused.selectAll();
+			return true;
+		}
+		if (action === "scroll_to_top") {
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			focused.scrollToTop();
+			return true;
+		}
+		if (action === "scroll_to_bottom") {
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			focused.scrollToBottom();
+			return true;
+		}
+		if (action === "scroll_page_up") {
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			focused.scrollPageUp();
+			return true;
+		}
+		if (action === "scroll_page_down") {
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			focused.scrollPageDown();
+			return true;
+		}
+		const fontSizeAction = fontSizeActionFromAction(action);
+		if (fontSizeAction) {
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			this.applyFontSizeAction(fontSizeAction);
 			return true;
 		}
 		if (action === "close_surface") {
@@ -191,6 +313,19 @@ export class TerminalWorkspaceController {
 		}
 		event.stopImmediatePropagation();
 		return true;
+	}
+
+	private applyFontSizeAction(action: FontSizeAction): void {
+		if (action.type === "reset") {
+			for (const surface of this.surfacesById.values()) {
+				surface.resetFontSize();
+			}
+			return;
+		}
+		const delta = action.type === "increase" ? action.amount : -action.amount;
+		for (const surface of this.surfacesById.values()) {
+			surface.adjustFontSize(delta);
+		}
 	}
 
 	private async createSplitFromFocusedSurface(direction: SplitDirection): Promise<void> {
@@ -301,6 +436,93 @@ export class TerminalWorkspaceController {
 		return this.surfacesById.get(this.focusedSurfaceId) ?? null;
 	}
 
+	private findTabFocusTarget(target: TabFocusTarget): TerminalTab | null {
+		if (this.tabs.length === 0) {
+			return null;
+		}
+		if (target.type === "index") {
+			return this.tabs[target.index] ?? null;
+		}
+		if (target.type === "last") {
+			return this.tabs[this.tabs.length - 1] ?? null;
+		}
+		const activeIndex = Math.max(0, this.tabs.findIndex((tab) => tab.id === this.activeTabId));
+		const offset = target.type === "next" ? 1 : -1;
+		const nextIndex = (activeIndex + offset + this.tabs.length) % this.tabs.length;
+		return this.tabs[nextIndex] ?? null;
+	}
+
+	private findSplitFocusTarget(target: SplitFocusTarget): string | null {
+		const tab = this.activeTab();
+		const focused = this.focusedSurface();
+		if (!tab || !focused) {
+			return null;
+		}
+
+		const surfaceIds = surfaceIdsInNode(tab.root).filter((surfaceId) => this.surfacesById.has(surfaceId));
+		if (target === "next" || target === "previous") {
+			return this.findSequentialSplitFocusTarget(surfaceIds, focused.id, target);
+		}
+		return this.findDirectionalSplitFocusTarget(surfaceIds, focused.id, target);
+	}
+
+	private findSequentialSplitFocusTarget(surfaceIds: string[], focusedSurfaceId: string, target: "next" | "previous"): string | null {
+		const index = surfaceIds.indexOf(focusedSurfaceId);
+		if (index === -1) {
+			return null;
+		}
+		const nextIndex = target === "next" ? index + 1 : index - 1;
+		return surfaceIds[nextIndex] ?? null;
+	}
+
+	private findDirectionalSplitFocusTarget(
+		surfaceIds: string[],
+		focusedSurfaceId: string,
+		target: "up" | "down" | "left" | "right"
+	): string | null {
+		const rects = this.surfaceRects(surfaceIds);
+		const focused = rects.find((entry) => entry.id === focusedSurfaceId);
+		if (!focused) {
+			return null;
+		}
+
+		let best: { entry: SurfaceRect; overlap: number; distance: number; centerOffset: number } | null = null;
+		for (const entry of rects) {
+			if (entry.id === focused.id) {
+				continue;
+			}
+			const candidate = directionalCandidateScore(focused, entry, target);
+			if (!candidate) {
+				continue;
+			}
+			const scoredCandidate = { entry, ...candidate };
+			if (!best || compareDirectionalCandidate(scoredCandidate, best) < 0) {
+				best = scoredCandidate;
+			}
+		}
+		return best?.entry.id ?? null;
+	}
+
+	private surfaceRects(surfaceIds: string[]): SurfaceRect[] {
+		return surfaceIds.flatMap((surfaceId, order) => {
+			const surface = this.surfacesById.get(surfaceId);
+			if (!surface) {
+				return [];
+			}
+			const rect = surface.containerEl.getBoundingClientRect();
+			if (rect.width <= 0 || rect.height <= 0) {
+				return [];
+			}
+			return [{
+				id: surfaceId,
+				rect,
+				order,
+				centerX: rect.left + rect.width / 2,
+				centerY: rect.top + rect.height / 2
+			}];
+		});
+	}
+
 	private focusSurface(surfaceId: string, moveDomFocus = true): void {
 		if (!this.surfacesById.has(surfaceId)) {
 			return;
@@ -332,17 +554,29 @@ export class TerminalWorkspaceController {
 	private renderTabs(): void {
 		this.rootEl.dataset.tabCount = String(this.tabs.length);
 		this.tabsEl.empty();
-		for (const tab of this.tabs) {
+		for (const [index, tab] of this.tabs.entries()) {
 			const title = this.titleForTab(tab);
+			const shortcutLabel = this.shortcutLabelForTab(index);
 			const tabEl = this.tabsEl.createEl("button", {
 				cls: "ghostterm-tab",
-				text: title,
 				attr: {
-					"aria-label": `${DISPLAY_NAME} tab ${title}`,
+					"aria-label": shortcutLabel
+						? `${DISPLAY_NAME} tab ${title}, ${shortcutLabel}`
+						: `${DISPLAY_NAME} tab ${title}`,
 					"aria-selected": String(tab.id === this.activeTabId),
 					role: "tab"
 				}
 			});
+			tabEl.createEl("span", {
+				cls: "ghostterm-tab-title",
+				text: title
+			});
+			if (shortcutLabel) {
+				tabEl.createEl("span", {
+					cls: "ghostterm-tab-shortcut",
+					text: shortcutLabel
+				});
+			}
 			tabEl.addEventListener("click", () => {
 				this.activeTabId = tab.id;
 				this.focusedSurfaceId = firstSurfaceId(tab.root);
@@ -350,6 +584,16 @@ export class TerminalWorkspaceController {
 				this.focusedSurface()?.focus();
 			});
 		}
+	}
+
+	private shortcutLabelForTab(index: number): string | null {
+		if (index >= 0 && index < 8) {
+			return `\u2318${index + 1}`;
+		}
+		if (index === this.tabs.length - 1) {
+			return "\u23189";
+		}
+		return null;
 	}
 
 	private titleForTab(tab: TerminalTab): string {
@@ -510,4 +754,149 @@ export class TerminalWorkspaceController {
 			: "none";
 		this.setStatus(`${STATUS_PREFIX}: ${this.tabs.length} tab(s), ${this.surfacesById.size} surface(s), focused ${focusedSummary}`);
 	}
+}
+
+function splitFocusTargetFromAction(action: string): SplitFocusTarget | null {
+	if (!action.startsWith("goto_split:")) {
+		return null;
+	}
+	const target = action.slice("goto_split:".length);
+	if (target === "top") {
+		return "up";
+	}
+	if (target === "bottom") {
+		return "down";
+	}
+	return isSplitFocusTarget(target) ? target : null;
+}
+
+function isSplitFocusTarget(value: string): value is SplitFocusTarget {
+	return value === "up" ||
+		value === "down" ||
+		value === "left" ||
+		value === "right" ||
+		value === "next" ||
+		value === "previous";
+}
+
+function tabFocusTargetFromAction(action: string): TabFocusTarget | null {
+	if (action === "last_tab") {
+		return { type: "last" };
+	}
+	if (action === "next_tab") {
+		return { type: "next" };
+	}
+	if (action === "previous_tab") {
+		return { type: "previous" };
+	}
+	if (!action.startsWith("goto_tab:")) {
+		return null;
+	}
+	const tabNumber = Number.parseInt(action.slice("goto_tab:".length), 10);
+	return Number.isInteger(tabNumber) && tabNumber > 0
+		? { type: "index", index: tabNumber - 1 }
+		: null;
+}
+
+function copyToClipboardModeFromAction(action: string): "copy" | "mixed" | null {
+	if (action === "copy_to_clipboard") {
+		return "copy";
+	}
+	if (!action.startsWith("copy_to_clipboard:")) {
+		return null;
+	}
+	return action.slice("copy_to_clipboard:".length) === "mixed" ? "mixed" : "copy";
+}
+
+function fontSizeActionFromAction(action: string): FontSizeAction | null {
+	if (action === "reset_font_size") {
+		return { type: "reset" };
+	}
+	if (action.startsWith("increase_font_size")) {
+		return { type: "increase", amount: positiveActionAmount(action, 1) };
+	}
+	if (action.startsWith("decrease_font_size")) {
+		return { type: "decrease", amount: positiveActionAmount(action, 1) };
+	}
+	return null;
+}
+
+function positiveActionAmount(action: string, fallback: number): number {
+	const colonIndex = action.indexOf(":");
+	if (colonIndex === -1) {
+		return fallback;
+	}
+	const amount = Number.parseFloat(action.slice(colonIndex + 1));
+	return Number.isFinite(amount) && amount > 0 ? amount : fallback;
+}
+
+function directionalCandidateScore(
+	focused: SurfaceRect,
+	candidate: SurfaceRect,
+	target: "up" | "down" | "left" | "right"
+): { overlap: number; distance: number; centerOffset: number } | null {
+	const epsilon = 0.5;
+	if (target === "up") {
+		if (candidate.centerY >= focused.centerY - epsilon) {
+			return null;
+		}
+		return {
+			overlap: overlap(focused.rect.left, focused.rect.right, candidate.rect.left, candidate.rect.right),
+			distance: Math.max(0, focused.rect.top - candidate.rect.bottom),
+			centerOffset: Math.abs(candidate.centerX - focused.centerX)
+		};
+	}
+	if (target === "down") {
+		if (candidate.centerY <= focused.centerY + epsilon) {
+			return null;
+		}
+		return {
+			overlap: overlap(focused.rect.left, focused.rect.right, candidate.rect.left, candidate.rect.right),
+			distance: Math.max(0, candidate.rect.top - focused.rect.bottom),
+			centerOffset: Math.abs(candidate.centerX - focused.centerX)
+		};
+	}
+	if (target === "left") {
+		if (candidate.centerX >= focused.centerX - epsilon) {
+			return null;
+		}
+		return {
+			overlap: overlap(focused.rect.top, focused.rect.bottom, candidate.rect.top, candidate.rect.bottom),
+			distance: Math.max(0, focused.rect.left - candidate.rect.right),
+			centerOffset: Math.abs(candidate.centerY - focused.centerY)
+		};
+	}
+	if (candidate.centerX <= focused.centerX + epsilon) {
+		return null;
+	}
+	return {
+		overlap: overlap(focused.rect.top, focused.rect.bottom, candidate.rect.top, candidate.rect.bottom),
+		distance: Math.max(0, candidate.rect.left - focused.rect.right),
+		centerOffset: Math.abs(candidate.centerY - focused.centerY)
+	};
+}
+
+function compareDirectionalCandidate(
+	a: { entry: SurfaceRect; overlap: number; distance: number; centerOffset: number },
+	b: { entry: SurfaceRect; overlap: number; distance: number; centerOffset: number }
+): number {
+	const aHasOverlap = a.overlap > 0.5;
+	const bHasOverlap = b.overlap > 0.5;
+	if (aHasOverlap !== bHasOverlap) {
+		return aHasOverlap ? -1 : 1;
+	}
+	if (a.distance !== b.distance) {
+		return a.distance - b.distance;
+	}
+	if (a.overlap !== b.overlap) {
+		return b.overlap - a.overlap;
+	}
+	if (a.centerOffset !== b.centerOffset) {
+		return a.centerOffset - b.centerOffset;
+	}
+	return a.entry.order - b.entry.order;
+}
+
+function overlap(aStart: number, aEnd: number, bStart: number, bEnd: number): number {
+	return Math.max(0, Math.min(aEnd, bEnd) - Math.max(aStart, bStart));
 }

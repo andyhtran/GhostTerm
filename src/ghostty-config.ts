@@ -74,12 +74,49 @@ const PALETTE_NAMES: Array<keyof GhosttyThemeColors> = [
 ];
 
 export const GHOSTTY_BUILTIN_KEYBINDS: GhosttyKeybind[] = [
-	{ mods: new Set(["super"]), key: "c", action: "copy_to_clipboard" },
+	{ mods: new Set(["super", "alt"]), key: "w", action: "close_tab:this" },
+	{ mods: new Set(["super"]), key: "=", action: "increase_font_size:1" },
+	{ mods: new Set(["super", "shift"]), key: "+", action: "increase_font_size:1" },
+	{ mods: new Set(["super"]), key: "-", action: "decrease_font_size:1" },
+	{ mods: new Set(["super"]), key: "0", action: "reset_font_size" },
+	{ mods: new Set(["super"]), key: "end", action: "scroll_to_bottom" },
+	{ mods: new Set(["super"]), key: "home", action: "scroll_to_top" },
+	{ mods: new Set(["super"]), key: "page_down", action: "scroll_page_down" },
+	{ mods: new Set(["super"]), key: "page_up", action: "scroll_page_up" },
+	{ mods: new Set(["super"]), key: "backspace", action: "text:\\x15" },
+	{ mods: new Set(["super"]), key: "left", action: "text:\\x01" },
+	{ mods: new Set(["super"]), key: "right", action: "text:\\x05" },
+	{ mods: new Set(["super"]), key: "a", action: "select_all" },
+	{ mods: new Set(["super"]), key: "c", action: "copy_to_clipboard:mixed" },
 	{ mods: new Set(["super"]), key: "v", action: "paste_from_clipboard" },
+	{ mods: new Set(["super"]), key: "k", action: "clear_screen" },
 	{ mods: new Set(["super"]), key: "d", action: "new_split:right" },
 	{ mods: new Set(["super", "shift"]), key: "d", action: "new_split:down" },
+	{ mods: new Set(["super", "alt"]), key: "up", action: "goto_split:up" },
+	{ mods: new Set(["super", "alt"]), key: "down", action: "goto_split:down" },
+	{ mods: new Set(["super", "alt"]), key: "left", action: "goto_split:left" },
+	{ mods: new Set(["super", "alt"]), key: "right", action: "goto_split:right" },
+	{ mods: new Set(["super"]), key: "[", action: "goto_split:previous" },
+	{ mods: new Set(["super"]), key: "]", action: "goto_split:next" },
+	{ mods: new Set(["ctrl", "shift"]), key: "tab", action: "previous_tab" },
+	{ mods: new Set(["ctrl"]), key: "tab", action: "next_tab" },
+	{ mods: new Set(["super"]), key: "1", action: "goto_tab:1" },
+	{ mods: new Set(["super"]), key: "2", action: "goto_tab:2" },
+	{ mods: new Set(["super"]), key: "3", action: "goto_tab:3" },
+	{ mods: new Set(["super"]), key: "4", action: "goto_tab:4" },
+	{ mods: new Set(["super"]), key: "5", action: "goto_tab:5" },
+	{ mods: new Set(["super"]), key: "6", action: "goto_tab:6" },
+	{ mods: new Set(["super"]), key: "7", action: "goto_tab:7" },
+	{ mods: new Set(["super"]), key: "8", action: "goto_tab:8" },
+	{ mods: new Set(["super"]), key: "9", action: "last_tab" },
+	{ mods: new Set(["super", "shift"]), key: "[", action: "previous_tab" },
+	{ mods: new Set(["super", "shift"]), key: "]", action: "next_tab" },
 	{ mods: new Set(["super"]), key: "t", action: "new_tab" },
 	{ mods: new Set(["super"]), key: "w", action: "close_surface" },
+	{ mods: new Set(["alt"]), key: "left", action: "esc:b" },
+	{ mods: new Set(["alt"]), key: "right", action: "esc:f" },
+	{ mods: new Set([]), key: "copy", action: "copy_to_clipboard:mixed" },
+	{ mods: new Set([]), key: "paste", action: "paste_from_clipboard" },
 	{ mods: new Set(["shift"]), key: "enter", action: "text:\\e[13;2u" },
 	{ mods: new Set(["super"]), key: "enter", action: "text:\\e[13;9u" }
 ];
@@ -276,14 +313,20 @@ function parseKeybind(value: string): GhosttyKeybind[] | null {
 		return null;
 	}
 
-	const parts = combo.split("+").map((part) => part.trim()).filter(Boolean);
-	const keyPart = parts.pop();
+	const parts = combo.split("+").map((part) => part.trim());
+	let keyPart = parts.pop();
+	while (keyPart === "" && parts.at(-1) === "") {
+		parts.pop();
+	}
+	if (keyPart === "" && combo.endsWith("+")) {
+		keyPart = "+";
+	}
 	if (!keyPart) {
 		return null;
 	}
 
 	const mods = new Set<GhosttyModifier>();
-	for (const mod of parts) {
+	for (const mod of parts.filter(Boolean)) {
 		const normalized = normalizeGhosttyModifier(mod);
 		if (!normalized) {
 			return null;
@@ -322,11 +365,33 @@ function normalizeGhosttyKey(value: string): string {
 	const key = value.trim().toLowerCase().replace(/\s+/g, "_");
 	const aliases: Record<string, string> = {
 		arrowup: "up",
+		arrow_up: "up",
+		up_arrow: "up",
 		arrowdown: "down",
+		arrow_down: "down",
+		down_arrow: "down",
 		arrowleft: "left",
+		arrow_left: "left",
+		left_arrow: "left",
 		arrowright: "right",
+		arrow_right: "right",
+		right_arrow: "right",
 		return: "enter",
 		esc: "escape",
+		equal: "=",
+		equals: "=",
+		plus: "+",
+		minus: "-",
+		digit_0: "0",
+		digit_1: "1",
+		digit_2: "2",
+		digit_3: "3",
+		digit_4: "4",
+		digit_5: "5",
+		digit_6: "6",
+		digit_7: "7",
+		digit_8: "8",
+		digit_9: "9",
 		pgup: "page_up",
 		pgdn: "page_down",
 		spacebar: "space"
@@ -350,6 +415,8 @@ function domKeyToGhostty(domKey: string): string {
 		ArrowDown: "down",
 		ArrowLeft: "left",
 		ArrowRight: "right",
+		Copy: "copy",
+		Paste: "paste",
 		" ": "space"
 	};
 	if (map[domKey]) {
@@ -377,6 +444,8 @@ function ghosttyKeyToObsidianKey(key: string): string | null {
 		down: "ArrowDown",
 		left: "ArrowLeft",
 		right: "ArrowRight",
+		copy: "Copy",
+		paste: "Paste",
 		space: " "
 	};
 	return map[key] ?? (key.length === 1 || /^f\d+$/i.test(key) ? key : null);
