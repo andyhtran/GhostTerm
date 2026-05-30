@@ -55,6 +55,7 @@ const context = await esbuild.context({
   ],
   format: "cjs",
   logLevel: "info",
+  minify: prod,
   outfile: "dist/main.js",
   platform: "node",
   plugins: [embeddedHelperPlugin],

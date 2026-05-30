@@ -89,37 +89,37 @@ export default class GhostTermPlugin extends Plugin {
 	private registerCommands(): void {
 		this.addCommand({
 			id: "open-terminal",
-			name: `${DISPLAY_NAME}: Open terminal`,
+			name: "Open terminal",
 			callback: () => void this.openTerminal()
 		});
 		this.addCommand({
 			id: "open-terminal-split",
-			name: `${DISPLAY_NAME}: Open terminal in main area split`,
+			name: "Open terminal in main area split",
 			callback: () => void this.openTerminalInLocation("split")
 		});
 		this.addCommand({
 			id: "new-terminal-tab",
-			name: `${DISPLAY_NAME}: New terminal tab`,
+			name: "New terminal tab",
 			checkCallback: (checking) => this.withActiveGhostTermView(checking, (view) => view.controller.newTab())
 		});
 		this.addCommand({
 			id: "split-terminal-right",
-			name: `${DISPLAY_NAME}: Split terminal right`,
+			name: "Split terminal right",
 			checkCallback: (checking) => this.withActiveGhostTermView(checking, (view) => view.controller.splitFocused("row"))
 		});
 		this.addCommand({
 			id: "split-terminal-down",
-			name: `${DISPLAY_NAME}: Split terminal down`,
+			name: "Split terminal down",
 			checkCallback: (checking) => this.withActiveGhostTermView(checking, (view) => view.controller.splitFocused("column"))
 		});
 		this.addCommand({
 			id: "close-terminal-surface",
-			name: `${DISPLAY_NAME}: Close focused terminal`,
+			name: "Close focused terminal",
 			checkCallback: (checking) => this.withActiveGhostTermView(checking, (view) => view.controller.closeFocusedSurface())
 		});
 		this.addCommand({
 			id: "restart-terminal-surface",
-			name: `${DISPLAY_NAME}: Restart terminal surface`,
+			name: "Restart terminal surface",
 			checkCallback: (checking) => this.withActiveGhostTermView(checking, (view) => view.controller.restartFocusedSurface())
 		});
 	}
