@@ -13,16 +13,18 @@ An Obsidian desktop plugin for Ghostty-style terminal surfaces inside your works
 
 ## Getting Started
 
-Install from the Obsidian Community directory:
+1. Open Obsidian.
+2. Go to **Settings -> Community plugins -> Browse**.
+3. Search for **GhostTerm**.
+4. Select **Install**, then **Enable**.
+5. Run `Open terminal` from the command palette.
 
-1. Open <https://community.obsidian.md/plugins/ghostterm>.
-2. Select **Add to Obsidian**.
-3. Enable GhostTerm in Obsidian's community plugin settings.
-4. Run `Open terminal` from the command palette.
+You can also open the [GhostTerm community plugin page](https://community.obsidian.md/plugins/ghostterm) and select **Add to Obsidian**.
 
-You can also install from inside Obsidian by opening **Settings -> Community plugins -> Browse** and searching for `GhostTerm`. If the in-app browser has not refreshed yet, use the web listing above.
+<details>
+<summary>Other install methods</summary>
 
-BRAT beta install:
+### BRAT
 
 1. In BRAT, add `andyhtran/GhostTerm`.
 2. Select the latest release. No GitHub token is required for this repository.
@@ -31,7 +33,7 @@ BRAT beta install:
 
 On first terminal start, GhostTerm writes its bundled PTY helper into the installed plugin directory. BRAT only needs the standard Obsidian plugin files from the release.
 
-Manual install:
+### Manual Install
 
 1. Download these files from the [latest GitHub release](https://github.com/andyhtran/GhostTerm/releases/latest):
 
@@ -45,7 +47,7 @@ Manual install:
 
 3. Enable GhostTerm in Obsidian's community plugin settings.
 
-Build from source:
+### Build From Source
 
 1. Build GhostTerm:
 
@@ -63,6 +65,8 @@ Build from source:
    ```
 
 3. Enable GhostTerm in Obsidian's community plugin settings.
+
+</details>
 
 ## Features
 

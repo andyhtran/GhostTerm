@@ -1,6 +1,6 @@
 {
   "name": "ghostterm",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "private": true,
   "description": "Ghostty-style terminal surfaces in your workspace.",
   "type": "module",
