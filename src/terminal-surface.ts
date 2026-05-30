@@ -410,7 +410,7 @@ export class TerminalSurface {
 		return {
 			cursorBlink: config.cursorBlink ?? false,
 			cursorStyle: config.cursorStyle ?? "block",
-			fontFamily: settings.fontFamilyOverride || config.fontFamily || "Menlo, Monaco, 'SF Mono', monospace",
+			fontFamily: settings.fontFamilyOverride || config.fontFamily || "'JetBrains Mono', 'SF Mono', Menlo, Monaco, monospace",
 			fontSize: settings.fontSizeOverride > 0 ? settings.fontSizeOverride : config.fontSize ?? 13,
 			ligatures: settings.ligatures && config.ligatures !== false,
 			scrollback: config.scrollback ?? settings.scrollbackLines,
@@ -614,28 +614,28 @@ function cwdFromOsc7(payload: string): string | null {
 
 function terminalTheme(colors: GhosttyThemeColors): GhosttyThemeColors {
 	return {
-		background: colors.background ?? "#111111",
-		foreground: colors.foreground ?? "#f3f3f3",
-		cursor: colors.cursor ?? "#8fb8ff",
+		background: colors.background ?? "#282c34",
+		foreground: colors.foreground ?? "#abb2bf",
+		cursor: colors.cursor ?? "#abb2bf",
 		cursorText: colors.cursorText,
-		selectionBackground: colors.selectionBackground ?? "#2d4f78",
+		selectionBackground: colors.selectionBackground ?? "#3e4451",
 		selectionForeground: colors.selectionForeground,
-		black: colors.black,
-		red: colors.red,
-		green: colors.green,
-		yellow: colors.yellow,
-		blue: colors.blue,
-		magenta: colors.magenta,
-		cyan: colors.cyan,
-		white: colors.white,
-		brightBlack: colors.brightBlack,
-		brightRed: colors.brightRed,
-		brightGreen: colors.brightGreen,
-		brightYellow: colors.brightYellow,
-		brightBlue: colors.brightBlue,
-		brightMagenta: colors.brightMagenta,
-		brightCyan: colors.brightCyan,
-		brightWhite: colors.brightWhite
+		black: colors.black ?? "#1e222a",
+		red: colors.red ?? "#e06c75",
+		green: colors.green ?? "#98c379",
+		yellow: colors.yellow ?? "#e5c07b",
+		blue: colors.blue ?? "#61afef",
+		magenta: colors.magenta ?? "#c678dd",
+		cyan: colors.cyan ?? "#56b6c2",
+		white: colors.white ?? "#abb2bf",
+		brightBlack: colors.brightBlack ?? "#5c6370",
+		brightRed: colors.brightRed ?? "#e06c75",
+		brightGreen: colors.brightGreen ?? "#98c379",
+		brightYellow: colors.brightYellow ?? "#e5c07b",
+		brightBlue: colors.brightBlue ?? "#61afef",
+		brightMagenta: colors.brightMagenta ?? "#c678dd",
+		brightCyan: colors.brightCyan ?? "#56b6c2",
+		brightWhite: colors.brightWhite ?? "#ffffff"
 	};
 }
 
