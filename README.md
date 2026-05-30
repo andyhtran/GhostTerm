@@ -14,7 +14,11 @@ An Obsidian desktop plugin for Ghostty-style terminal surfaces inside your works
 BRAT install:
 
 1. In BRAT, add `andyhtran/GhostTerm`.
-2. Enable GhostTerm in Obsidian's community plugin settings.
+2. Select the latest release. No GitHub token is required for this repository.
+3. Enable GhostTerm in Obsidian's community plugin settings.
+4. Run `Ghostty: Open terminal` from the command palette.
+
+On first terminal start, GhostTerm writes its bundled PTY helper into the installed plugin directory. BRAT only needs the standard Obsidian plugin files from the release.
 
 Manual install:
 
@@ -55,11 +59,11 @@ Manual install:
 
 ## Security and Privacy
 
-GhostTerm starts a local shell through a bundled helper binary. Commands run with the same permissions as Obsidian and can read, write, create, delete, or execute files that your user account can access.
+GhostTerm starts a local shell through a bundled helper binary. Commands run with the same permissions as Obsidian and your user account. They can read, write, create, delete, or execute files that your user account can access.
 
 Use GhostTerm only in vaults and workspaces where running a local terminal is appropriate. Treat terminal output and shell commands with the same care you would in a standalone terminal application.
 
-GhostTerm does not collect telemetry. The plugin does not require network access at runtime.
+GhostTerm does not collect telemetry. GhostTerm does not require network access at runtime.
 
 ## Build Commands
 
