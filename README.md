@@ -9,6 +9,8 @@ An Obsidian desktop plugin for Ghostty-style terminal surfaces inside your works
 
 [Getting Started](#getting-started) · [Features](#features) · [Requirements](#requirements) · [Build](#build-commands) · [Limitations](#limitations)
 
+![GhostTerm terminal surfaces inside Obsidian](assets/ghostterm.png)
+
 ## Getting Started
 
 BRAT install:
@@ -16,7 +18,7 @@ BRAT install:
 1. In BRAT, add `andyhtran/GhostTerm`.
 2. Select the latest release. No GitHub token is required for this repository.
 3. Enable GhostTerm in Obsidian's community plugin settings.
-4. Run `Ghostty: Open terminal` from the command palette.
+4. Run `Open terminal` from the command palette.
 
 On first terminal start, GhostTerm writes its bundled PTY helper into the installed plugin directory. BRAT only needs the standard Obsidian plugin files from the release.
 
@@ -51,11 +53,16 @@ Manual install:
 
 ## Requirements
 
+Runtime:
+
 - Obsidian desktop 1.8+
 - macOS on Apple Silicon
+- A local shell available on the system
+
+Build:
+
 - Node.js and npm for building the plugin
 - Rust toolchain for building the PTY helper
-- A local shell available on the system
 
 ## Security and Privacy
 
@@ -82,7 +89,7 @@ GhostTerm includes TypeScript plugin code and a Rust PTY helper. The plugin writ
 ## Limitations
 
 - macOS Apple Silicon is the supported platform.
-- GhostTerm is not listed in Obsidian's community plugin directory yet.
+- Unsupported platforms show an in-plugin message and do not start the helper.
 - Ghostty config support covers font, color, cursor, scrollback, shell, and basic keybind settings.
 - The plugin is desktop-only because it starts local processes.
 

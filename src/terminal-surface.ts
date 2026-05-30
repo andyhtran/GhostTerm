@@ -18,6 +18,7 @@ import { ensureBundledHelper } from "./helper-installer";
 import { nextId } from "./ids";
 import { Osc8LinkProvider, Osc8LinkRegistry } from "./osc8-hyperlinks";
 import type { GhostTermPluginHost } from "./plugin-host";
+import { currentPlatformSupport } from "./platform-support";
 import { currentCwdForChildProcess } from "./process-cwd";
 import { OutputMetadataParser } from "./output-metadata";
 import { getVaultBasePath, isUsableDirectory } from "./vault";
@@ -228,6 +229,17 @@ export class TerminalSurface {
 
 	private async spawnPty(): Promise<void> {
 		const spawnId = ++this.spawnSequence;
+		const platformSupport = currentPlatformSupport();
+		if (!platformSupport.supported) {
+			this.setLifecycle("exited");
+			const reason = platformSupport.reason ?? "GhostTerm is not supported on this platform.";
+			const message = `${STATUS_PREFIX}: ${reason}`;
+			this.onStatus(message);
+			this.terminal?.writeln(`\r\n${message}\r\n`);
+			this.showExitOverlay(reason);
+			return;
+		}
+
 		const helperPath = this.helperPath();
 		this.outputMetadataDecoder = new TextDecoder();
 		this.outputMetadataParser = new OutputMetadataParser();
@@ -582,7 +594,7 @@ export class TerminalSurface {
 
 	private helperPath(): string {
 		const basePath = getVaultBasePath(this.app);
-		const pluginDir = this.plugin.manifest.dir ?? ".obsidian/plugins/ghostterm";
+		const pluginDir = this.plugin.manifest.dir ?? join(this.app.vault.configDir, "plugins", this.plugin.manifest.id);
 		return join(basePath, pluginDir, "bin", "ghostterm-pty");
 	}
 }
