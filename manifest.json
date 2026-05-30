@@ -1,7 +1,7 @@
 {
   "id": "ghostterm",
   "name": "GhostTerm",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "minAppVersion": "1.8.0",
   "description": "Ghostty-style terminal surfaces for Obsidian.",
   "author": "Andy Tran",
