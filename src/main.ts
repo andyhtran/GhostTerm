@@ -34,7 +34,7 @@ function isFolderLike(value: unknown): value is TFolder {
 }
 
 export default class GhostTermPlugin extends Plugin {
-	settings: GhostTermSettings = normalizeGhostTermSettings(null);
+	ghostTermSettings: GhostTermSettings = normalizeGhostTermSettings(null);
 	ghosttyConfig: GhosttyConfig = emptyGhosttyConfig();
 
 	async onload(): Promise<void> {
@@ -50,28 +50,24 @@ export default class GhostTermPlugin extends Plugin {
 		this.addSettingTab(new GhostTermSettingTab(this.app, this));
 	}
 
-	onunload(): void {
-		this.app.workspace.detachLeavesOfType(VIEW_TYPE_GHOSTTERM);
-	}
-
 	async loadSettings(): Promise<void> {
-		this.settings = normalizeGhostTermSettings(await this.loadData());
+		this.ghostTermSettings = normalizeGhostTermSettings(await this.loadData());
 	}
 
 	async saveSettings(): Promise<void> {
-		this.settings = normalizeGhostTermSettings(this.settings);
-		await this.saveData(this.settings);
+		this.ghostTermSettings = normalizeGhostTermSettings(this.ghostTermSettings);
+		await this.saveData(this.ghostTermSettings);
 		this.reloadGhosttyConfig();
 		this.refreshOpenViews();
 	}
 
 	async updateSettings(patch: Partial<GhostTermSettings>): Promise<void> {
-		this.settings = normalizeGhostTermSettings({ ...this.settings, ...patch });
+		this.ghostTermSettings = normalizeGhostTermSettings({ ...this.ghostTermSettings, ...patch });
 		await this.saveSettings();
 	}
 
 	reloadGhosttyConfig(): void {
-		this.ghosttyConfig = parseGhosttyConfig(this.settings.ghosttyConfigPath || undefined);
+		this.ghosttyConfig = parseGhosttyConfig(this.ghostTermSettings.ghosttyConfigPath || undefined);
 	}
 
 	effectiveKeybinds(): GhosttyKeybind[] {
@@ -156,13 +152,13 @@ export default class GhostTermPlugin extends Plugin {
 	}
 
 	async openTerminal(cwd?: string): Promise<void> {
-		await this.openTerminalInLocation(this.settings.defaultLocation, cwd);
+		await this.openTerminalInLocation(this.ghostTermSettings.defaultLocation, cwd);
 	}
 
 	async openTerminalInLocation(location: ObsidianTerminalLocation, cwd?: string): Promise<void> {
 		const existing = this.findExistingLeaf(location);
 		if (existing) {
-			this.app.workspace.revealLeaf(existing);
+			await this.app.workspace.revealLeaf(existing);
 			if (cwd && existing.view instanceof GhostTermView) {
 				existing.view.controller?.newTab(cwd);
 			} else if (existing.view instanceof GhostTermView) {
@@ -182,7 +178,7 @@ export default class GhostTermPlugin extends Plugin {
 			active: true,
 			state: { cwd }
 		});
-		this.app.workspace.revealLeaf(leaf);
+		await this.app.workspace.revealLeaf(leaf);
 	}
 
 	private resolveGhostTermLeaf(location: ObsidianTerminalLocation): WorkspaceLeaf | null {

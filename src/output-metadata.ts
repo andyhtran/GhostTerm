@@ -5,6 +5,10 @@ export type OutputMetadataEvent =
 
 const MAX_PENDING_OSC_BYTES = 4096;
 const MAX_OSC8_TEXT_LENGTH = 2048;
+const ESCAPE = String.fromCharCode(0x1b);
+const CSI_SEQUENCE_PATTERN = new RegExp(`${ESCAPE}\\[[0-?]*[ -/]*[@-~]`, "g");
+const ESCAPE_SEQUENCE_PATTERN = new RegExp(`${ESCAPE}[ -/]*[@-~]`, "g");
+const TERMINAL_CONTROL_PATTERN = new RegExp(`[${charRange(0x00, 0x08)}${charEscape(0x0b)}${charEscape(0x0c)}${charRange(0x0e, 0x1f)}${charEscape(0x7f)}]`, "g");
 
 export class OutputMetadataParser {
 	private pending = "";
@@ -141,9 +145,9 @@ export class OutputMetadataParser {
 
 export function stripTerminalControls(value: string): string {
 	return value
-		.replace(/\x1b\[[0-?]*[ -/]*[@-~]/g, "")
-		.replace(/\x1b[ -/]*[@-~]/g, "")
-		.replace(/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/g, "")
+		.replace(CSI_SEQUENCE_PATTERN, "")
+		.replace(ESCAPE_SEQUENCE_PATTERN, "")
+		.replace(TERMINAL_CONTROL_PATTERN, "")
 		.replace(/\r\n|\r/g, "\n");
 }
 
@@ -168,4 +172,12 @@ function minNonNegative(a: number, b: number): number {
 		return a;
 	}
 	return Math.min(a, b);
+}
+
+function charRange(start: number, end: number): string {
+	return `${charEscape(start)}-${charEscape(end)}`;
+}
+
+function charEscape(code: number): string {
+	return `\\u${code.toString(16).padStart(4, "0")}`;
 }

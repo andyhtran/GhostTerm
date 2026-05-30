@@ -3,7 +3,7 @@ import type { GhosttyConfig, GhosttyKeybind } from "./ghostty-config";
 import type { GhostTermSettings } from "./settings";
 
 export interface GhostTermPluginHost {
-	settings: GhostTermSettings;
+	ghostTermSettings: GhostTermSettings;
 	ghosttyConfig: GhosttyConfig;
 	manifest: PluginManifest;
 	effectiveKeybinds(): GhosttyKeybind[];

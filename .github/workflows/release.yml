@@ -6,7 +6,10 @@ on:
       - "*.*.*"
 
 permissions:
+  artifact-metadata: write
+  attestations: write
   contents: write
+  id-token: write
 
 jobs:
   release:
@@ -68,13 +71,17 @@ jobs:
 
       - name: Prepare release assets
         run: |
-          version="$(node -p "require('./manifest.json').version")"
           mkdir -p release
           cp dist/main.js release/main.js
           cp manifest.json release/manifest.json
           cp styles.css release/styles.css
           cd release
-          zip -9 "../ghostterm-${version}.zip" main.js manifest.json styles.css
+          shasum -a 256 main.js manifest.json styles.css > checksums.txt
+
+      - name: Attest release assets
+        uses: actions/attest@v4
+        with:
+          subject-checksums: release/checksums.txt
 
       - name: Create GitHub release
         env:
@@ -85,7 +92,6 @@ jobs:
             release/main.js \
             release/manifest.json \
             release/styles.css \
-            "ghostterm-${version}.zip" \
             --title "GhostTerm ${version}" \
             --notes "GhostTerm ${version}." \
             --verify-tag
