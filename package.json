@@ -1,0 +1,32 @@
+{
+  "name": "ghostterm",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ghostty-style terminal surfaces for Obsidian.",
+  "type": "module",
+  "scripts": {
+    "build": "npm run build:helper && node esbuild.config.mjs production",
+    "build:helper": "mkdir -p bin && cargo build --release --manifest-path pty-helper/Cargo.toml && cp pty-helper/target/release/ghostterm-pty bin/ghostterm-pty",
+    "check": "tsc --noEmit",
+    "dev": "npm run build:helper && node esbuild.config.mjs"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/andyhtran/GhostTerm.git"
+  },
+  "bugs": {
+    "url": "https://github.com/andyhtran/GhostTerm/issues"
+  },
+  "homepage": "https://github.com/andyhtran/GhostTerm#readme",
+  "dependencies": {
+    "ghostty-web": "^0.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "builtin-modules": "^5.0.0",
+    "esbuild": "^0.27.2",
+    "obsidian": "^1.8.7",
+    "typescript": "^5.9.3"
+  }
+}

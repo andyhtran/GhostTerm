@@ -1,0 +1,9 @@
+node_modules/
+dist/
+bin/
+build/
+pty-helper/target/
+*.tsbuildinfo
+.env
+.env.*
+!.env.example

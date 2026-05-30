@@ -1,0 +1,14 @@
+[package]
+name = "ghostterm-pty"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "ghostterm-pty"
+path = "src/main.rs"
+
+[dependencies]
+nix = { version = "0.28", default-features = false, features = ["signal", "process"] }
+portable-pty = "0.9"
+signal-hook = "0.3"
+
