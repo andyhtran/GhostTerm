@@ -1,0 +1,91 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Check runner architecture
+        run: |
+          test "$(uname -m)" = "arm64"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Check Rust toolchain
+        run: cargo --version
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate release metadata
+        run: |
+          node <<'NODE'
+          const { readFileSync } = require("node:fs");
+
+          const tag = process.env.GITHUB_REF_NAME;
+          const manifest = JSON.parse(readFileSync("manifest.json", "utf8"));
+          const pkg = JSON.parse(readFileSync("package.json", "utf8"));
+          const versions = JSON.parse(readFileSync("versions.json", "utf8"));
+
+          function fail(message) {
+            console.error(message);
+            process.exit(1);
+          }
+
+          if (!/^\d+\.\d+\.\d+$/.test(manifest.version)) {
+            fail(`manifest version must be x.y.z, got ${manifest.version}`);
+          }
+          if (tag !== manifest.version) {
+            fail(`release tag ${tag} must match manifest version ${manifest.version}`);
+          }
+          if (pkg.version !== manifest.version) {
+            fail(`package version ${pkg.version} must match manifest version ${manifest.version}`);
+          }
+          if (versions[manifest.version] !== manifest.minAppVersion) {
+            fail(`versions.json must map ${manifest.version} to ${manifest.minAppVersion}`);
+          }
+          NODE
+
+      - name: Build
+        run: |
+          npm run check
+          npm run build
+
+      - name: Prepare release assets
+        run: |
+          version="$(node -p "require('./manifest.json').version")"
+          mkdir -p release
+          cp dist/main.js release/main.js
+          cp manifest.json release/manifest.json
+          cp styles.css release/styles.css
+          cd release
+          zip -9 "../ghostterm-${version}.zip" main.js manifest.json styles.css
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="$(node -p "require('./manifest.json').version")"
+          gh release create "$version" \
+            release/main.js \
+            release/manifest.json \
+            release/styles.css \
+            "ghostterm-${version}.zip" \
+            --title "GhostTerm ${version}" \
+            --notes "GhostTerm ${version}." \
+            --prerelease
