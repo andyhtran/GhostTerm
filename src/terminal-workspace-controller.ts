@@ -34,6 +34,7 @@ export class TerminalWorkspaceController {
 		private readonly onCloseView: () => void
 	) {
 		this.rootEl.setAttr("aria-label", `${DISPLAY_NAME} terminal workspace`);
+		this.rootEl.dataset.tabCount = "0";
 
 		this.toolbarEl = this.rootEl.createDiv({ cls: "ghostterm-toolbar" });
 		this.tabsEl = this.toolbarEl.createDiv({ cls: "ghostterm-tabs", attr: { role: "tablist" } });
@@ -329,6 +330,7 @@ export class TerminalWorkspaceController {
 	}
 
 	private renderTabs(): void {
+		this.rootEl.dataset.tabCount = String(this.tabs.length);
 		this.tabsEl.empty();
 		for (const tab of this.tabs) {
 			const title = this.titleForTab(tab);

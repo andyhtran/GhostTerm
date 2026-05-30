@@ -14,14 +14,14 @@ jobs:
 
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Check runner architecture
         run: |
           test "$(uname -m)" = "arm64"
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: "22"
           cache: npm
@@ -88,5 +88,5 @@ jobs:
             "ghostterm-${version}.zip" \
             --title "GhostTerm ${version}" \
             --notes "GhostTerm ${version}." \
-            --prerelease \
-            --verify-tag
+            --verify-tag \
+            --prerelease

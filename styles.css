@@ -1,37 +1,54 @@
 .ghostterm-view {
+  --ghostterm-bg: #282c34;
+  --ghostterm-bg-muted: #21252b;
+  --ghostterm-bg-raised: #2f343f;
+  --ghostterm-border: rgba(171, 178, 191, 0.18);
+  --ghostterm-border-strong: rgba(171, 178, 191, 0.28);
+  --ghostterm-divider: #252932;
+  --ghostterm-divider-line: rgba(18, 20, 24, 0.55);
+  --ghostterm-text: #abb2bf;
+  --ghostterm-text-strong: #d7dae0;
+  --ghostterm-accent: #61afef;
   display: flex;
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  background: #111111;
-  color: #f3f3f3;
-  font-family: var(--font-monospace), ui-monospace, SFMono-Regular, Menlo, monospace;
+  background: var(--ghostterm-bg);
+  color: var(--ghostterm-text);
+  font-family: "JetBrains Mono", "SF Mono", Menlo, Monaco, ui-monospace, monospace;
   position: relative;
 }
 
 .ghostterm-toolbar {
   align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--ghostterm-bg-muted);
+  border-bottom: 1px solid var(--ghostterm-border);
   display: flex;
   flex: 0 0 auto;
-  gap: 4px;
-  min-height: 28px;
-  padding: 2px 6px;
+  gap: 2px;
+  min-height: 30px;
+  padding: 2px 4px;
+}
+
+.ghostterm-view[data-tab-count="0"] .ghostterm-toolbar,
+.ghostterm-view[data-tab-count="1"] .ghostterm-toolbar {
+  display: none;
 }
 
 .ghostterm-toolbar button {
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 6px;
-  color: inherit;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--ghostterm-text);
   cursor: pointer;
-  font: 13px/1 var(--font-monospace), ui-monospace, SFMono-Regular, Menlo, monospace;
-  min-height: 22px;
+  font: 13px/1 "JetBrains Mono", "SF Mono", Menlo, Monaco, ui-monospace, monospace;
+  min-height: 24px;
 }
 
 .ghostterm-toolbar button:hover,
 .ghostterm-toolbar button:focus-visible {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(171, 178, 191, 0.10);
+  border-color: var(--ghostterm-border);
 }
 
 .ghostterm-tabs {
@@ -44,20 +61,22 @@
 }
 
 .ghostterm-tab {
-  border-radius: 6px;
+  border-radius: 4px;
   box-sizing: border-box;
   flex: 1 1 0;
   max-width: none;
   min-width: 0;
   overflow: hidden;
-  padding: 2px 8px;
+  padding: 2px 10px;
   text-align: center;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .ghostterm-tab[aria-selected="true"] {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--ghostterm-bg-raised);
+  border-color: var(--ghostterm-border-strong);
+  color: var(--ghostterm-text-strong);
 }
 
 .ghostterm-tab-add {
@@ -72,6 +91,7 @@
 }
 
 .ghostterm-workspace {
+  background: var(--ghostterm-bg);
   display: flex;
   flex: 1 1 auto;
   min-height: 0;
@@ -80,6 +100,7 @@
 }
 
 .ghostterm-split {
+  background: var(--ghostterm-bg);
   display: flex;
   flex: 1 1 auto;
   min-height: 0;
@@ -111,35 +132,35 @@
 }
 
 .ghostterm-split-resizer {
-  background: transparent;
-  flex: 0 0 7px;
+  background: var(--ghostterm-divider);
+  flex: 0 0 3px;
   position: relative;
   z-index: 2;
 }
 
 .ghostterm-split-resizer-row {
   cursor: col-resize;
-  margin-left: -3px;
-  margin-right: -3px;
+  margin-left: -1px;
+  margin-right: -1px;
 }
 
 .ghostterm-split-resizer-column {
   cursor: row-resize;
-  margin-bottom: -3px;
-  margin-top: -3px;
+  margin-bottom: -1px;
+  margin-top: -1px;
 }
 
 .ghostterm-split-resizer::before {
-  background: rgba(143, 184, 255, 0.75);
+  background: var(--ghostterm-divider-line);
   content: "";
-  opacity: 0;
+  opacity: 1;
   position: absolute;
   transition: opacity 120ms ease;
 }
 
 .ghostterm-split-resizer-row::before {
   bottom: 0;
-  left: 3px;
+  left: 1px;
   top: 0;
   width: 1px;
 }
@@ -148,13 +169,13 @@
   height: 1px;
   left: 0;
   right: 0;
-  top: 3px;
+  top: 1px;
 }
 
 .ghostterm-split-resizer:hover::before,
 .ghostterm-split-resizer:focus-visible::before,
 .ghostterm-resizing .ghostterm-split-resizer::before {
-  opacity: 1;
+  background: rgba(171, 178, 191, 0.28);
 }
 
 .ghostterm-resizing,
@@ -163,7 +184,8 @@
 }
 
 .ghostterm-surface {
-  border: 1px solid rgba(255, 255, 255, 0.10);
+  background: var(--ghostterm-bg);
+  border: 0;
   display: flex;
   flex: 1 1 0;
   flex-direction: column;
@@ -174,10 +196,11 @@
 }
 
 .ghostterm-surface[data-focused="true"] {
-  border-color: #8fb8ff;
+  box-shadow: none;
 }
 
 .ghostterm-terminal-host {
+  background: var(--ghostterm-bg);
   flex: 1 1 auto;
   min-height: 0;
   min-width: 0;
@@ -186,13 +209,14 @@
 }
 
 .ghostterm-terminal-host canvas {
+  background: var(--ghostterm-bg);
   display: block;
 }
 
 .ghostterm-exit-overlay {
   align-items: center;
-  background: rgba(17, 17, 17, 0.92);
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(40, 44, 52, 0.94);
+  border-top: 1px solid var(--ghostterm-border);
   display: flex;
   flex: 0 0 auto;
   gap: 8px;
@@ -205,16 +229,16 @@
 
 .ghostterm-exit-message {
   flex: 1 1 auto;
-  font: 12px/1.35 var(--font-monospace), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 12px/1.35 "JetBrains Mono", "SF Mono", Menlo, Monaco, ui-monospace, monospace;
   min-width: 0;
   overflow-wrap: anywhere;
 }
 
 .ghostterm-restart-button {
-  background: #8fb8ff;
+  background: var(--ghostterm-accent);
   border: 0;
-  border-radius: 6px;
-  color: #111111;
+  border-radius: 4px;
+  color: #1f2329;
   cursor: pointer;
   flex: 0 0 auto;
   font: 600 12px/1 var(--font-interface), system-ui, sans-serif;
@@ -224,7 +248,7 @@
 
 .ghostterm-restart-button:hover,
 .ghostterm-restart-button:focus-visible {
-  background: #b8d1ff;
+  background: #82cfff;
 }
 
 .ghostterm-status {
