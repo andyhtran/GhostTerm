@@ -15,7 +15,7 @@
   min-height: 0;
   background: var(--ghostterm-bg);
   color: var(--ghostterm-text);
-  font-family: "JetBrains Mono", "SF Mono", Menlo, Monaco, ui-monospace, monospace;
+  font-family: "JetBrains Mono", "SF Mono", Menlo, Monaco, monospace;
   position: relative;
 }
 
@@ -41,7 +41,7 @@
   border-radius: 4px;
   color: var(--ghostterm-text);
   cursor: pointer;
-  font: 13px/1 "JetBrains Mono", "SF Mono", Menlo, Monaco, ui-monospace, monospace;
+  font: 13px/1 "JetBrains Mono", "SF Mono", Menlo, Monaco, monospace;
   min-height: 24px;
 }
 
@@ -223,13 +223,13 @@
   padding: 8px;
 }
 
-.ghostterm-hidden {
-  display: none !important;
+.ghostterm-view .ghostterm-hidden {
+  display: none;
 }
 
 .ghostterm-exit-message {
   flex: 1 1 auto;
-  font: 12px/1.35 "JetBrains Mono", "SF Mono", Menlo, Monaco, ui-monospace, monospace;
+  font: 12px/1.35 "JetBrains Mono", "SF Mono", Menlo, Monaco, monospace;
   min-width: 0;
   overflow-wrap: anywhere;
 }
