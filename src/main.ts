@@ -10,6 +10,7 @@ import {
 	WorkspaceLeaf
 } from "obsidian";
 import type { EventRef, KeymapEventHandler, Modifier, ViewStateResult } from "obsidian";
+import { cleanupClipboardImageFiles } from "./clipboard-paste";
 import { DISPLAY_NAME, VIEW_TYPE_GHOSTTERM } from "./constants";
 import {
 	buildEffectiveKeybinds,
@@ -19,6 +20,7 @@ import {
 	type GhosttyConfig,
 	type GhosttyKeybind
 } from "./ghostty-config";
+import type { SplitFocusTarget } from "./split-tree";
 import {
 	GhostTermSettingTab,
 	normalizeGhostTermSettings,
@@ -48,6 +50,10 @@ export default class GhostTermPlugin extends Plugin {
 		this.registerCommands();
 		this.registerFileMenu();
 		this.addSettingTab(new GhostTermSettingTab(this.app, this));
+	}
+
+	onunload(): void {
+		void cleanupClipboardImageFiles();
 	}
 
 	async loadSettings(): Promise<void> {
@@ -108,6 +114,10 @@ export default class GhostTermPlugin extends Plugin {
 			name: "Split terminal down",
 			checkCallback: (checking) => this.withActiveGhostTermView(checking, (view) => view.controller.splitFocused("column"))
 		});
+		this.addFocusSplitCommand("up");
+		this.addFocusSplitCommand("down");
+		this.addFocusSplitCommand("left");
+		this.addFocusSplitCommand("right");
 		this.addCommand({
 			id: "close-terminal-surface",
 			name: "Close focused terminal",
@@ -117,6 +127,14 @@ export default class GhostTermPlugin extends Plugin {
 			id: "restart-terminal-surface",
 			name: "Restart terminal surface",
 			checkCallback: (checking) => this.withActiveGhostTermView(checking, (view) => view.controller.restartFocusedSurface())
+		});
+	}
+
+	private addFocusSplitCommand(target: Extract<SplitFocusTarget, "up" | "down" | "left" | "right">): void {
+		this.addCommand({
+			id: `focus-terminal-split-${target}`,
+			name: `Focus terminal split ${target}`,
+			checkCallback: (checking) => this.withActiveGhostTermView(checking, (view) => view.controller.focusSplit(target))
 		});
 	}
 

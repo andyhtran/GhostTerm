@@ -61,15 +61,34 @@
 }
 
 .ghostterm-tab {
+  align-items: center;
   border-radius: 4px;
   box-sizing: border-box;
+  display: grid;
   flex: 1 1 0;
+  gap: 4px;
+  grid-template-columns: minmax(18px, 44px) minmax(0, 1fr) minmax(18px, 44px);
   max-width: none;
   min-width: 0;
   overflow: hidden;
-  padding: 2px 10px;
+  padding: 2px 8px;
+}
+
+.ghostterm-tab-title {
+  grid-column: 2;
+  min-width: 0;
+  overflow: hidden;
   text-align: center;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ghostterm-tab-shortcut {
+  color: var(--ghostterm-text);
+  font-size: 11px;
+  grid-column: 3;
+  justify-self: end;
+  opacity: 0.58;
   white-space: nowrap;
 }
 
@@ -77,6 +96,11 @@
   background: var(--ghostterm-bg-raised);
   border-color: var(--ghostterm-border-strong);
   color: var(--ghostterm-text-strong);
+}
+
+.ghostterm-tab[aria-selected="true"] .ghostterm-tab-shortcut {
+  color: var(--ghostterm-text-strong);
+  opacity: 0.74;
 }
 
 .ghostterm-tab-add {

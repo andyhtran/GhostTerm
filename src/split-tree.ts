@@ -2,6 +2,7 @@ const MIN_SPLIT_RATIO = 0.15;
 const MAX_SPLIT_RATIO = 0.85;
 
 export type SplitDirection = "row" | "column";
+export type SplitFocusTarget = "up" | "down" | "left" | "right" | "next" | "previous";
 
 export type TerminalTab = {
 	id: string;
@@ -54,6 +55,13 @@ export function firstSurfaceId(node: SplitNode): string | null {
 		return node.surfaceId;
 	}
 	return firstSurfaceId(node.first) ?? firstSurfaceId(node.second);
+}
+
+export function surfaceIdsInNode(node: SplitNode): string[] {
+	if (node.type === "surface") {
+		return [node.surfaceId];
+	}
+	return [...surfaceIdsInNode(node.first), ...surfaceIdsInNode(node.second)];
 }
 
 export function containsSurfaceNode(node: SplitNode, surfaceId: string): boolean {
