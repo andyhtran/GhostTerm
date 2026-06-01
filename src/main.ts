@@ -53,6 +53,11 @@ export default class GhostTermPlugin extends Plugin {
 	}
 
 	onunload(): void {
+		for (const leaf of this.app.workspace.getLeavesOfType(VIEW_TYPE_GHOSTTERM)) {
+			if (leaf.view instanceof GhostTermView) {
+				leaf.view.controller?.dispose();
+			}
+		}
 		void cleanupClipboardImageFiles();
 	}
 
